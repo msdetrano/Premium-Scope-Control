@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #1e293b; }
+        .gradient-bg { background: linear-gradient(135deg, #1e40af 0%, #0891b2 100%); }
+        
+        .glow-green { color: #4ade80; text-shadow: 0 0 12px rgba(74, 222, 128, 0.9); font-weight: 800; }
+        .glow-red { color: #f87171; text-shadow: 0 0 12px rgba(248, 113, 113, 0.9); font-weight: 800; }
+        
+        .client-name { cursor: default; user-select: none; }
+        .client-name:active { color: #ef4444; transition: color 0.1s; }
+        
+        .footer-line { border-top: 1px solid #e2e8f0; margin-top: 40px; padding: 20px 0; }
+    </style>
+</head>
+<body class="p-8">
+
+    <div class="gradient-bg rounded-3xl p-10 text-white mb-8 shadow-2xl relative overflow-hidden">
+        <div class="relative z-10">
+            <div class="flex items-center gap-2 mb-4 opacity-90">
+                <i class="fas fa-shield-check text-sm"></i>
+                <span class="text-xs font-bold uppercase tracking-widest">Controle Operacional</span>
+            </div>
+            <h1 class="text-4xl font-extrabold mb-4 tracking-tight">Premium Scope Control</h1>
+            <p class="max-w-2xl text-blue-100 leading-relaxed text-lg">
+                Matriz oficial de <strong>gestão de recursos</strong> e <strong>escopo de atendimento</strong>. 
+                Garantindo cobertura total para o Squad Premium.
+            </p>
+        </div>
+
+        <div class="absolute right-10 top-10 text-right space-y-3 bg-black/25 p-6 rounded-2xl backdrop-blur-md border border-white/10">
+            <div class="flex items-center justify-end gap-3 mb-1">
+                <span id="edit-indicator" class="bg-white/20 px-3 py-1 rounded-full text-[10px] font-black tracking-widest">MODO LEITURA</span>
+            </div>
+            <p class="text-sm tracking-wide"><span class="glow-green text-lg">●</span> VERDE = GESTÃO ATIVA</p>
+            <p class="text-sm tracking-wide"><span class="glow-red text-lg">●</span> VERMELHO = SEM GESTÃO</p>
+        </div>
+    </div>
+
+    <div id="stats-container" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-10"></div>
+
+    <div class="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+        <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/30">
+            <div class="flex items-center gap-4">
+                <h2 class="text-gray-800 font-extrabold flex items-center gap-2 text-lg uppercase tracking-tight">
+                    <i class="fas fa-list-check text-blue-600"></i> Lista de Escopo
+                    <span id="client-count" class="bg-blue-600 text-white px-3 py-0.5 rounded-full text-xs shadow-lg">0</span>
+                </h2>
+                <button onclick="addNewClient()" class="text-blue-500 hover:text-blue-700 transition-all hover:scale-110">
+                    <i class="fas fa-plus-circle text-2xl"></i>
+                </button>
+            </div>
+            <div class="flex gap-4 items-center">
+                <button id="lock-btn" onclick="toggleLock()" class="flex items-center gap-2 px-6 py-2.5 rounded-xl border-2 border-gray-200 text-sm font-bold transition-all bg-white shadow-sm hover:border-blue-400">
+                    <i id="lock-icon" class="fas fa-lock text-gray-400"></i>
+                    <span id="lock-text">BLOQUEADO</span>
+                </button>
+            </div>
+        </div>
+
+        <table class="w-full text-left">
+            <thead>
+                <tr class="bg-gray-100/50 text-[11px] uppercase font-black text-gray-500 tracking-widest">
+                    <th class="px-8 py-5">Cliente</th>
+                    <th class="text-center">Redes</th>
+                    <th class="text-center">S.O.</th>
+                    <th class="text-center">Bancos</th>
+                    <th class="text-center">Segurança</th>
+                    <th class="text-center">Backup</th>
+                    <th class="text-center">VMware</th>
+                </tr>
+            </thead>
+            <tbody id="client-table-body" class="text-sm font-medium text-gray-700"></tbody>
+        </table>
+    </div>
+
+    <footer class="footer-line flex justify-between items-center text-gray-400 text-xs font-medium uppercase tracking-widest">
+        <div>
+            Criado por <span class="text-blue-600 font-bold">Marcos Detrano</span>
+        </div>
+        <div>
+            Ano 2026
+        </div>
+        <div class="opacity-50">
+            Edge UOL • Squad Premium
+        </div>
+    </footer>
+
+    <script>
+        let isLocked = true;
+        let pressTimer;
+        let clients = [
+            { id: 1, name: 'TechNova Soluções', status: [true, true, false, true, true, false] },
+            { id: 2, name: 'Grupo Estrela', status: [false, true, true, false, false, true] },
+            { id: 3, name: 'Indústrias Horizonte', status: [true, false, true, true, true, true] },
+            { id: 4, name: 'Logística Rápida', status: [false, false, false, true, false, false] },
+            { id: 5, name: 'Banco Central LTDA', status: [true, true, true, true, true, true] }
+        ];
+
+        const techNames = ['Redes', 'S.O.', 'Banco de Dados', 'Segurança', 'Backup', 'VMware'];
+        const techIcons = ['fa-network-wired', 'fa-laptop-code', 'fa-database', 'fa-shield-halved', 'fa-box-archive', 'fa-server'];
+
+        function toggleLock() {
+            isLocked = !isLocked;
+            const btn = document.getElementById('lock-btn');
+            const text = document.getElementById('lock-text');
+            const icon = document.getElementById('lock-icon');
+            const indicator = document.getElementById('edit-indicator');
+
+            if(isLocked) {
+                text.innerText = 'BLOQUEADO';
+                icon.className = 'fas fa-lock text-gray-400';
+                indicator.innerText = 'MODO LEITURA';
+                indicator.className = 'bg-white/20 px-3 py-1 rounded-full text-[10px] font-black tracking-widest';
+                btn.className = 'flex items-center gap-2 px-6 py-2.5 rounded-xl border-2 border-gray-200 text-sm font-bold transition-all bg-white';
+            } else {
+                text.innerText = 'EDITANDO';
+                icon.className = 'fas fa-lock-open text-blue-500 animate-pulse';
+                indicator.innerText = 'MODO EDIÇÃO ATIVO';
+                indicator.className = 'bg-blue-600 px-3 py-1 rounded-full text-[10px] font-black tracking-widest shadow-lg shadow-blue-500/50';
+                btn.className = 'flex items-center gap-2 px-6 py-2.5 rounded-xl border-2 border-blue-500 text-sm font-bold transition-all bg-blue-50 text-blue-700 shadow-md';
+            }
+            renderTable();
+        }
+
+        function addNewClient() {
+            if(isLocked) { alert('Ative o modo de edição.'); return; }
+            const name = prompt("Nome do cliente:");
+            if (name) {
+                clients.push({ id: Date.now(), name, status: Array(6).fill(false) });
+                renderAll();
+            }
+        }
+
+        function startPress(id) { if(!isLocked) pressTimer = window.setTimeout(() => deleteClient(id), 2000); }
+        function cancelPress() { clearTimeout(pressTimer); }
+
+        function deleteClient(id) {
+            const client = clients.find(c => c.id === id);
+            if(confirm(`Deseja remover ${client.name}?`)) {
+                clients = clients.filter(c => c.id !== id);
+                renderAll();
+            }
+        }
+
+        function toggleStatus(clientId, techIndex) {
+            if(isLocked) return;
+            const client = clients.find(c => c.id === clientId);
+            client.status[techIndex] = !client.status[techIndex];
+            renderAll();
+        }
+
+        function renderStats() {
+            const container = document.getElementById('stats-container');
+            container.innerHTML = techNames.map((tech, i) => {
+                const activeCount = clients.filter(c => c.status[i]).length;
+                const percent = clients.length ? Math.round((activeCount / clients.length) * 100) : 0;
+                return `
+                    <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-lg">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="p-3 bg-blue-50 text-blue-600 rounded-xl"><i class="fas ${techIcons[i]} text-lg"></i></div>
+                            <span class="text-2xl font-black text-gray-800">${percent}%</span>
+                        </div>
+                        <h3 class="font-bold text-gray-500 text-[10px] uppercase tracking-widest">${tech}</h3>
+                        <div class="w-full bg-gray-100 h-2 rounded-full mt-4 overflow-hidden">
+                            <div class="bg-gradient-to-r from-blue-600 to-cyan-500 h-full transition-all duration-700 shadow-[0_0_8px_rgba(37,99,235,0.3)]" style="width: ${percent}%"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('client-table-body');
+            document.getElementById('client-count').innerText = clients.length;
+            tbody.innerHTML = clients.map(client => `
+                <tr class="border-b border-gray-50 hover:bg-blue-50/10 transition-colors">
+                    <td class="px-8 py-5">
+                        <span class="client-name font-bold text-gray-800 tracking-tight" 
+                              onmousedown="startPress(${client.id})" onmouseup="cancelPress()" onmouseleave="cancelPress()"
+                              ontouchstart="startPress(${client.id})" ontouchend="cancelPress()">
+                            ${client.name}
+                        </span>
+                    </td>
+                    ${client.status.map((s, i) => `
+                        <td class="py-5 text-center">
+                            <button onclick="toggleStatus(${client.id}, ${i})" 
+                                    class="w-10 h-10 rounded-xl transition-all ${isLocked ? 'cursor-not-allowed opacity-70' : 'hover:scale-110 active:scale-95'} 
+                                    ${s ? 'bg-green-500 text-white shadow-lg shadow-green-200' : 'bg-red-500 text-white shadow-lg shadow-red-200'}">
+                                <i class="fas ${s ? 'fa-check' : 'fa-xmark'} text-sm"></i>
+                            </button>
+                        </td>
+                    `).join('')}
+                </tr>
+            `).join('');
+        }
+
+        function renderAll() { renderStats(); renderTable(); }
+        renderAll();
+    </script>
+</body>
+</html>
