@@ -1,0 +1,1 @@
+<div id="premium-dashboard-host" style="width: 100%; min-height: 800px; display: block;"></div>

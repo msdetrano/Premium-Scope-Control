@@ -1,0 +1,163 @@
+<script>
+(function() { 
+    // === 1. FORÇAR CARREGAMENTO DOS ÍCONES (SOLUÇÃO DEFINITIVA) ===
+    function loadFontAwesome() {
+        if (!document.getElementById('fa-global-css')) {
+            const link = document.createElement('link');
+            link.id = 'fa-global-css'; link.rel = 'stylesheet';
+            link.href = '[https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css](https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css)';
+            document.head.appendChild(link);
+        }
+    }
+    loadFontAwesome();
+
+    // === 2. CONFIGURAÇÃO ===
+    const CONFIG = {
+        font: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+        gradient: 'linear-gradient(135deg, #1e40af 0%, #2563eb 100%)',
+        colors: { bg: '#f8fafc', textMain: '#334155', textLight: '#94a3b8', border: '#e2e8f0', primary: '#2563eb' }
+    };
+
+    let state = {
+        isLocked: true,
+        clients: [
+            { id: 1, name: 'TechNova Soluções', status: [true, true, false, true, true, false] },
+            { id: 2, name: 'Grupo Estrela', status: [false, true, true, false, false, true] },
+            { id: 3, name: 'Indústrias Horizonte', status: [true, false, true, true, true, true] },
+            { id: 4, name: 'Logística Rápida', status: [false, false, false, true, false, false] },
+            { id: 5, name: 'Banco Central LTDA', status: [true, true, true, true, true, true] },
+            { id: 6, name: 'Saúde & Vida Clínicas', status: [true, false, false, false, true, false] }
+        ]
+    };
+
+    const techs = ['Redes', 'S.O.', 'Bancos', 'Segurança', 'Backup', 'VMware'];
+    const icons = ['fa-network-wired', 'fa-desktop', 'fa-database', 'fa-shield-halved', 'fa-rotate', 'fa-server'];
+
+    // === 3. CSS ISOLADO ===
+    const styles = `
+        @import url('[https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css](https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css)');
+        :host { display: block; width: 100%; font-family: ${CONFIG.font}; color: ${CONFIG.colors.textMain}; box-sizing: border-box; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        .dashboard-container { max-width: 1200px; margin: 0 auto; padding: 40px 20px; }
+        
+        .header-banner { background: ${CONFIG.gradient}; border-radius: 24px; padding: 48px; color: white; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); margin-bottom: 40px; display: flex; justify-content: space-between; align-items: center; }
+        .header-content h1 { font-size: 3rem; font-weight: 800; margin-bottom: 10px; color: white; letter-spacing: -0.025em; }
+        .header-content p { font-size: 1.1rem; opacity: 0.9; max-width: 600px; }
+        .tag-guide { background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 99px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 16px; display: inline-block; }
+        
+        .status-box { background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); padding: 24px; border-radius: 16px; min-width: 220px; }
+        .status-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; font-weight: 700; margin-bottom: 8px; color: white; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+        .dot.green { background: #4ade80; box-shadow: 0 0 10px #4ade80; }
+        .dot.red { background: #f87171; box-shadow: 0 0 10px #f87171; }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 24px; margin-bottom: 40px; }
+        .stat-card { background: white; padding: 24px; border-radius: 16px; border: 1px solid ${CONFIG.colors.border}; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); transition: transform 0.2s; }
+        .stat-card:hover { transform: translateY(-4px); }
+        .stat-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        
+        .icon-box { width: 48px; height: 48px; background: #eff6ff; color: ${CONFIG.colors.primary}; display: flex; align-items: center; justify-content: center; border-radius: 12px; }
+        .icon-box i { font-size: 1.6rem; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 2px 3px rgba(37,99,235,0.3)); }
+        
+        .percent { font-size: 1.5rem; font-weight: 800; }
+        .stat-label { font-size: 0.7rem; font-weight: 700; color: ${CONFIG.colors.textLight}; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; }
+        .progress-bg { width: 100%; height: 8px; background: #f1f5f9; border-radius: 99px; overflow: hidden; }
+        .progress-bar { height: 100%; background: ${CONFIG.colors.primary}; border-radius: 99px; }
+
+        .table-container { background: white; border-radius: 16px; border: 1px solid ${CONFIG.colors.border}; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .toolbar { padding: 24px; border-bottom: 1px solid ${CONFIG.colors.border}; display: flex; justify-content: space-between; align-items: center; background: #f8fafc; }
+        .toolbar h2 { font-size: 1.1rem; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+        
+        .btn { padding: 8px 16px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer; border: none; display: flex; align-items: center; gap: 8px; }
+        .btn-add { background: white; border: 1px solid ${CONFIG.colors.border}; }
+        .btn-lock { background: #e2e8f0; color: ${CONFIG.colors.textLight}; }
+        .btn-lock.active { background: ${CONFIG.colors.primary}; color: white; }
+
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: center; padding: 16px; font-size: 0.7rem; text-transform: uppercase; color: ${CONFIG.colors.textLight}; background: white; border-bottom: 1px solid ${CONFIG.colors.border}; }
+        th:first-child { text-align: left; padding-left: 32px; }
+        td { padding: 12px 16px; border-bottom: 1px solid ${CONFIG.colors.border}; text-align: center; }
+        td:first-child { text-align: left; padding-left: 32px; font-weight: 600; }
+        tr:hover { background: #f8fafc; }
+
+        .client-name { cursor: pointer; user-select: none; transition: color 0.2s; }
+        .client-name:hover { color: ${CONFIG.colors.primary}; }
+        
+        .status-btn { width: 34px; height: 34px; border-radius: 8px; border: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; font-size: 0.85rem; transition: transform 0.1s; }
+        .status-btn:active { transform: scale(0.95); }
+        .status-true { background: #dcfce7; color: #166534; } 
+        .status-false { background: #fee2e2; color: #991b1b; }
+        
+        .hint-text { padding: 12px 24px; font-size: 0.7rem; color: ${CONFIG.colors.textLight}; border-top: 1px solid ${CONFIG.colors.border}; background: #f8fafc; display: flex; align-items: center; gap: 6px; }
+        .footer { margin-top: 40px; display: flex; justify-content: space-between; font-size: 0.7rem; font-weight: 700; color: ${CONFIG.colors.textLight}; text-transform: uppercase; letter-spacing: 0.1em; }
+        
+        @media (max-width: 768px) { .header-banner { flex-direction: column; text-align: center; } }
+    `;
+
+    // === 4. RENDERIZAÇÃO ===
+    function render(shadow) {
+        const statsHTML = techs.map((t, i) => {
+            const active = state.clients.filter(c => c.status[i]).length;
+            const total = state.clients.length || 1;
+            const pct = Math.round((active / total) * 100);
+            return `<div class="stat-card"><div class="stat-header"><div class="icon-box"><i class="fas ${icons[i]}"></i></div><span class="percent">${pct}%</span></div><div class="stat-label">${t}</div><div class="progress-bg"><div class="progress-bar" style="width: ${pct}%"></div></div></div>`;
+        }).join('');
+
+        const rowsHTML = state.clients.map(c => `
+            <tr>
+                <td><span class="client-name" data-cid="${c.id}">${c.name}</span></td>
+                ${c.status.map((s, idx) => `<td><button class="status-btn ${s ? 'status-true' : 'status-false'}" data-action="toggle" data-cid="${c.id}" data-idx="${idx}"><i class="fas ${s ? 'fa-check' : 'fa-xmark'}"></i></button></td>`).join('')}
+            </tr>`).join('');
+
+        shadow.innerHTML = `<style>${styles}</style><div class="dashboard-container"><div class="header-banner"><div class="header-content"><span class="tag-guide">Guia do Time</span><h1>Premium Scope Control</h1><p>Matriz oficial de gestão de recursos e escopo de atendimento.</p></div><div class="status-box"><div class="status-row"><span>Gestão Ativa</span> <span class="dot green"></span></div><div class="status-row"><span>Sem Gestão</span> <span class="dot red"></span></div></div></div><div class="stats-grid">${statsHTML}</div><div class="table-container"><div class="toolbar"><h2><i class="fas fa-list-check" style="color: ${CONFIG.colors.primary}"></i> Lista de Escopo</h2><div style="display:flex; gap:10px;"><button class="btn btn-add" id="btn-add"><i class="fas fa-plus"></i> Adicionar</button><button class="btn btn-lock ${!state.isLocked ? 'active' : ''}" id="btn-lock"><i class="fas ${state.isLocked ? 'fa-lock' : 'fa-lock-open'}"></i> ${state.isLocked ? 'BLOQUEADO' : 'EDITANDO'}</button></div></div><div style="overflow-x:auto"><table><thead><tr><th>Cliente</th>${techs.map(t => `<th>${t}</th>`).join('')}</tr></thead><tbody>${rowsHTML}</tbody></table></div><div class="hint-text"><i class="fas fa-info-circle"></i><span><strong>Dica:</strong> Segure o clique no nome do cliente para excluir.</span></div></div><div class="footer"><span>Criado por Marcos Detrano</span><span>Squad Premium • 2026</span></div></div>`;
+        attachEvents(shadow);
+    }
+
+    function attachEvents(shadow) {
+        shadow.getElementById('btn-lock').addEventListener('click', () => { state.isLocked = !state.isLocked; render(shadow); });
+        shadow.getElementById('btn-add').addEventListener('click', () => {
+            if (state.isLocked) return alert("Desbloqueie para editar.");
+            const name = prompt("Nome do Cliente:");
+            if (name) { state.clients.push({ id: Date.now(), name, status: Array(6).fill(false) }); render(shadow); }
+        });
+
+        const table = shadow.querySelector('table');
+        if (table) {
+            table.addEventListener('click', (e) => {
+                const btn = e.target.closest('button[data-action="toggle"]');
+                if (!btn || state.isLocked) return;
+                const cid = parseInt(btn.dataset.cid);
+                const idx = parseInt(btn.dataset.idx);
+                const client = state.clients.find(c => c.id === cid);
+                if (client) { client.status[idx] = !client.status[idx]; render(shadow); }
+            });
+
+            let pressTimer;
+            const startPress = (e) => {
+                if (state.isLocked) return;
+                const target = e.target.closest('.client-name');
+                if (!target) return;
+                pressTimer = setTimeout(() => {
+                    const cid = parseInt(target.dataset.cid);
+                    const client = state.clients.find(c => c.id === cid);
+                    if (confirm(`Excluir o cliente "${client.name}"?`)) {
+                        state.clients = state.clients.filter(c => c.id !== cid); render(shadow);
+                    }
+                }, 800);
+            };
+            const cancelPress = () => { if (pressTimer) clearTimeout(pressTimer); };
+            table.addEventListener('mousedown', startPress); table.addEventListener('mouseup', cancelPress); table.addEventListener('mouseleave', cancelPress);
+            table.addEventListener('touchstart', startPress, {passive: true}); table.addEventListener('touchend', cancelPress);
+        }
+    }
+
+    function init() {
+        const host = document.getElementById('premium-dashboard-host');
+        if (!host) { setTimeout(init, 100); return; }
+        if (host.shadowRoot) return;
+        const shadow = host.attachShadow({ mode: 'open' });
+        render(shadow);
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+})();
+</script>
